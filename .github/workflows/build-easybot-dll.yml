@@ -1,0 +1,76 @@
+name: Build EasyBot DLL
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: s
+          submodules: recursive
+
+      - name: Setup MSVC x86
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Prepare short workspace path
+        shell: pwsh
+        run: |
+          subst B: "$env:GITHUB_WORKSPACE\s"
+          "EASYBOT_ROOT=B:\" | Out-File -FilePath $env:GITHUB_ENV -Encoding ascii -Append
+
+      - name: Show tool versions
+        shell: pwsh
+        run: |
+          cmake --version
+          ninja --version
+
+      - name: Configure
+        shell: pwsh
+        working-directory: B:\
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 2
+        run: |
+          cmake -S . -B build `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build EasyBotDLL
+        shell: pwsh
+        working-directory: B:\
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 2
+        run: |
+          cmake --build build --target EasyBotDLL
+
+      - name: Collect artifacts
+        shell: pwsh
+        working-directory: B:\
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact | Out-Null
+
+          $dllPath = "B:\Bot\EasyBot.dll"
+          if (!(Test-Path $dllPath)) {
+            throw "Expected DLL not found at $dllPath"
+          }
+
+          Copy-Item $dllPath -Destination "B:\artifact\EasyBot.dll" -Force
+
+          $pdbPath = "B:\Bot\EasyBot.pdb"
+          if (Test-Path $pdbPath) {
+            Copy-Item $pdbPath -Destination "B:\artifact\EasyBot.pdb" -Force
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: easybot-dll-win32
+          path: B:\artifact
+          if-no-files-found: error
