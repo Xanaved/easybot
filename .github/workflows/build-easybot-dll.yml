@@ -7,6 +7,8 @@ jobs:
   build:
     runs-on: windows-latest
     timeout-minutes: 120
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: C:\Users\runneradmin\AppData\Local\vcpkg\archives
 
     steps:
       - name: Checkout
@@ -26,6 +28,22 @@ jobs:
           subst B: "$env:GITHUB_WORKSPACE\s"
           "EASYBOT_ROOT=B:\" | Out-File -FilePath $env:GITHUB_ENV -Encoding ascii -Append
 
+      - name: Cache vcpkg archives
+        uses: actions/cache@v4
+        with:
+          path: C:\Users\runneradmin\AppData\Local\vcpkg\archives
+          key: vcpkg-archives-${{ runner.os }}-x86-static-${{ hashFiles('s/vcpkg.json', 's/CMakeLists.txt', 's/.gitmodules', 's/.github/workflows/build-easybot-dll.yml') }}
+          restore-keys: |
+            vcpkg-archives-${{ runner.os }}-x86-static-
+
+      - name: Cache vcpkg downloads
+        uses: actions/cache@v4
+        with:
+          path: B:\third_party\vcpkg\downloads
+          key: vcpkg-downloads-${{ runner.os }}-x86-static-${{ hashFiles('s/vcpkg.json', 's/CMakeLists.txt', 's/.gitmodules', 's/.github/workflows/build-easybot-dll.yml') }}
+          restore-keys: |
+            vcpkg-downloads-${{ runner.os }}-x86-static-
+
       - name: Show tool versions
         shell: pwsh
         run: |
@@ -40,7 +58,8 @@ jobs:
         run: |
           cmake -S . -B build `
             -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release `
+            -DVCPKG_BUILD_TYPE=release
 
       - name: Build EasyBotDLL
         shell: pwsh
