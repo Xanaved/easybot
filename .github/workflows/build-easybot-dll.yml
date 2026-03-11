@@ -26,6 +26,8 @@ jobs:
         shell: pwsh
         run: |
           subst B: "$env:GITHUB_WORKSPACE\s"
+          New-Item -ItemType Directory -Force -Path "C:\Users\runneradmin\AppData\Local\vcpkg\archives" | Out-Null
+          New-Item -ItemType Directory -Force -Path "B:\third_party\vcpkg\downloads" | Out-Null
           "EASYBOT_ROOT=B:\" | Out-File -FilePath $env:GITHUB_ENV -Encoding ascii -Append
 
       - name: Cache vcpkg archives
