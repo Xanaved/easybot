@@ -30,19 +30,21 @@ jobs:
           New-Item -ItemType Directory -Force -Path "B:\third_party\vcpkg\downloads" | Out-Null
           "EASYBOT_ROOT=B:\" | Out-File -FilePath $env:GITHUB_ENV -Encoding ascii -Append
 
-      - name: Cache vcpkg archives
-        uses: actions/cache@v4
+      - name: Restore vcpkg archives cache
+        id: cache-vcpkg-archives
+        uses: actions/cache/restore@v4
         with:
           path: C:\Users\runneradmin\AppData\Local\vcpkg\archives
-          key: vcpkg-archives-${{ runner.os }}-x86-static-${{ hashFiles('s/vcpkg.json', 's/CMakeLists.txt', 's/.gitmodules', 's/.github/workflows/build-easybot-dll.yml') }}
+          key: vcpkg-archives-${{ runner.os }}-x86-static-${{ hashFiles('s/vcpkg.json', 's/CMakeLists.txt') }}
           restore-keys: |
             vcpkg-archives-${{ runner.os }}-x86-static-
 
-      - name: Cache vcpkg downloads
-        uses: actions/cache@v4
+      - name: Restore vcpkg downloads cache
+        id: cache-vcpkg-downloads
+        uses: actions/cache/restore@v4
         with:
           path: B:\third_party\vcpkg\downloads
-          key: vcpkg-downloads-${{ runner.os }}-x86-static-${{ hashFiles('s/vcpkg.json', 's/CMakeLists.txt', 's/.gitmodules', 's/.github/workflows/build-easybot-dll.yml') }}
+          key: vcpkg-downloads-${{ runner.os }}-x86-static-${{ hashFiles('s/vcpkg.json', 's/CMakeLists.txt') }}
           restore-keys: |
             vcpkg-downloads-${{ runner.os }}-x86-static-
 
@@ -95,3 +97,17 @@ jobs:
           name: easybot-dll-win32
           path: B:\artifact
           if-no-files-found: error
+
+      - name: Save vcpkg archives cache
+        if: always() && steps.cache-vcpkg-archives.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: C:\Users\runneradmin\AppData\Local\vcpkg\archives
+          key: ${{ steps.cache-vcpkg-archives.outputs.cache-primary-key }}
+
+      - name: Save vcpkg downloads cache
+        if: always() && steps.cache-vcpkg-downloads.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: B:\third_party\vcpkg\downloads
+          key: ${{ steps.cache-vcpkg-downloads.outputs.cache-primary-key }}
