@@ -17,10 +17,23 @@ namespace {
         uintptr_t singleton;
     };
 
+    std::string getRuntimeLogPath() {
+        char tempPath[MAX_PATH] = {0};
+        DWORD len = GetTempPathA(MAX_PATH, tempPath);
+        if (len == 0 || len >= MAX_PATH) {
+            return "easybot_runtime.log";
+        }
+        std::string path(tempPath);
+        if (!path.empty() && path.back() != '\\' && path.back() != '/') {
+            path.push_back('\\');
+        }
+        path += "easybot_runtime.log";
+        return path;
+    }
+
     void appendHookLog(const std::string& line) {
         std::lock_guard<std::mutex> lock(g_logMutex);
-        CreateDirectoryA("C:\\temp", nullptr);
-        std::ofstream out("C:\\temp\\easybot_runtime.log", std::ios::app);
+        std::ofstream out(getRuntimeLogPath(), std::ios::app);
         if (!out.is_open()) return;
         out << line << std::endl;
     }
@@ -100,6 +113,13 @@ void __stdcall hooked_bindSingletonFunction(uintptr_t a1, uintptr_t a2, uintptr_
             tmp = *reinterpret_cast<uintptr_t*>(ebp + classFunctionOffset);
         }
         ClassMemberFunctions[std::string(global) + "." + std::string(field)]  = tmp;
+        if (global == "LocalPlayer" &&
+            (field == "autoWalk" || field == "stopAutoWalk" || field == "isAutoWalking")) {
+            appendHookLog("[bind-class] " + global + "." + field +
+                " fn=" + hexPtr(tmp) +
+                " desc=" + hexPtr(a3) +
+                " ebp=" + hexPtr(ebp));
+        }
         /*
         g_log << "[Class Member Function] class: "<<  global << " function: " << field << " function_address: " << std::hex << tmp << std::endl;
         g_log.flush();
@@ -111,7 +131,7 @@ void __stdcall hooked_bindSingletonFunction(uintptr_t a1, uintptr_t a2, uintptr_
             second_tmp = *reinterpret_cast<uintptr_t*>(ebp + singletonFunctionOffset + 0x04);
         }
         SingletonFunctions[std::string(global) + "." + std::string(field)]  = {tmp, second_tmp};
-        if ((global == "g_game" && (field == "walk" || field == "autoWalk" || field == "look")) ||
+        if ((global == "g_game" && (field == "walk" || field == "autoWalk" || field == "look" || field == "getLocalPlayer")) ||
             (global == "g_map" && field == "findPath")) {
             appendHookLog("[bind] " + global + "." + field +
                 " fn=" + hexPtr(tmp) +

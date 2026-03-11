@@ -1,4 +1,38 @@
 #include "LocalPlayer.h"
+#include <fstream>
+#include <mutex>
+#include <sstream>
+
+namespace {
+    std::mutex g_localPlayerLogMutex;
+
+    std::string localPlayerHex(uintptr_t value) {
+        std::ostringstream oss;
+        oss << "0x" << std::hex << std::uppercase << value;
+        return oss.str();
+    }
+
+    std::string localPlayerPos(const Position& pos) {
+        std::ostringstream oss;
+        oss << "(" << pos.x << "," << pos.y << "," << pos.z << ")";
+        return oss.str();
+    }
+
+    void appendLocalPlayerLog(const std::string& line) {
+        std::lock_guard<std::mutex> lock(g_localPlayerLogMutex);
+        char tempPath[MAX_PATH] = {0};
+        DWORD len = GetTempPathA(MAX_PATH, tempPath);
+        std::string path = (len > 0 && len < MAX_PATH) ? std::string(tempPath) : std::string();
+        if (!path.empty() && path.back() != '\\' && path.back() != '/') {
+            path.push_back('\\');
+        }
+        path += "easybot_runtime.log";
+        std::ofstream out(path, std::ios::app);
+        if (!out.is_open()) return;
+        out << line << std::endl;
+    }
+}
+
 LocalPlayer* LocalPlayer::instance{nullptr};
 std::mutex LocalPlayer::mutex;
 
@@ -181,7 +215,12 @@ bool LocalPlayer::isAutoWalking(LocalPlayerPtr localPlayer) {
         );
     auto function = reinterpret_cast<IsAutoWalking>(it->second);
     return g_dispatcher->scheduleEventEx([function, localPlayer]() {
-        return function(localPlayer);
+        const auto result = function(localPlayer);
+        appendLocalPlayerLog("[call] LocalPlayer.isAutoWalking fn=" +
+            localPlayerHex(reinterpret_cast<uintptr_t>(function)) +
+            " this=" + localPlayerHex(localPlayer) +
+            " result=" + (result ? "true" : "false"));
+        return result;
     });
 }
 
@@ -194,6 +233,9 @@ void LocalPlayer::stopAutoWalk(LocalPlayerPtr localPlayer) {
         );
     auto function = reinterpret_cast<StopAutoWalk>(it->second);
     return g_dispatcher->scheduleEventEx([function, localPlayer]() {
+        appendLocalPlayerLog("[call] LocalPlayer.stopAutoWalk fn=" +
+            localPlayerHex(reinterpret_cast<uintptr_t>(function)) +
+            " this=" + localPlayerHex(localPlayer));
         return function(localPlayer);
     });
 }
@@ -208,8 +250,14 @@ bool LocalPlayer::autoWalk(LocalPlayerPtr localPlayer, const Position &destinati
         );
     auto function = reinterpret_cast<AutoWalk>(it->second);
     return g_dispatcher->scheduleEventEx([function, localPlayer, destination, retry]() {
-        (void)retry;
-        return function(localPlayer, &destination);
+        appendLocalPlayerLog("[call] LocalPlayer.autoWalk.enter fn=" +
+            localPlayerHex(reinterpret_cast<uintptr_t>(function)) +
+            " this=" + localPlayerHex(localPlayer) +
+            " destination=" + localPlayerPos(destination) +
+            " retry=" + (retry ? "true" : "false"));
+        const auto result = function(localPlayer, &destination);
+        appendLocalPlayerLog("[call] LocalPlayer.autoWalk.leave result=" + std::string(result ? "true" : "false"));
+        return result;
     });
 }
 

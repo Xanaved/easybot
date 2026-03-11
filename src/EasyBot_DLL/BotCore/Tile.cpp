@@ -62,9 +62,9 @@ bool Tile::isWalkable(TilePtr tile, bool ignoreMonsters) {
         bool *RDX,
         bool ignoreCreatures
         );
-    auto function = reinterpret_cast<IsWalkable>(ClassMemberFunctions["Tile.getItems"]);
+    auto function = reinterpret_cast<IsWalkable>(ClassMemberFunctions["Tile.isWalkable"]);
     return g_dispatcher->scheduleEventEx([function, tile, ignoreMonsters]() {
-        bool result;
+        bool result = false;
         function(tile, &result, ignoreMonsters);
         return result;
     });

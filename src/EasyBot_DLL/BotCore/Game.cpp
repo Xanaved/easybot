@@ -1,4 +1,31 @@
 #include "Game.h"
+#include <fstream>
+#include <mutex>
+#include <sstream>
+
+namespace {
+    std::mutex g_gameLogMutex;
+
+    std::string gameHex(uintptr_t value) {
+        std::ostringstream oss;
+        oss << "0x" << std::hex << std::uppercase << value;
+        return oss.str();
+    }
+
+    void appendGameLog(const std::string& line) {
+        std::lock_guard<std::mutex> lock(g_gameLogMutex);
+        char tempPath[MAX_PATH] = {0};
+        DWORD len = GetTempPathA(MAX_PATH, tempPath);
+        std::string path = (len > 0 && len < MAX_PATH) ? std::string(tempPath) : std::string();
+        if (!path.empty() && path.back() != '\\' && path.back() != '/') {
+            path.push_back('\\');
+        }
+        path += "easybot_runtime.log";
+        std::ofstream out(path, std::ios::app);
+        if (!out.is_open()) return;
+        out << line << std::endl;
+    }
+}
 
 
 Game* Game::instance{nullptr};
@@ -557,6 +584,10 @@ LocalPlayerPtr Game::getLocalPlayer() {
     return g_dispatcher->scheduleEventEx([function]() {
         LocalPlayerPtr result;
         function(SingletonFunctions["g_game.getLocalPlayer"].second, &result);
+        appendGameLog("[call] g_game.getLocalPlayer fn=" +
+            gameHex(SingletonFunctions["g_game.getLocalPlayer"].first) +
+            " this=" + gameHex(SingletonFunctions["g_game.getLocalPlayer"].second) +
+            " result=" + gameHex(result));
         return result;
     });
 }
@@ -583,7 +614,6 @@ std::string Game::getCharacterName() {
         return result;
     });
 }
-
 
 
 
