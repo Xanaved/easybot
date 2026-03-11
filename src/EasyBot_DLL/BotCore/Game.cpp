@@ -45,13 +45,13 @@ void Game::autoWalk(const std::vector<Otc::Direction>& dirs, const Position &sta
     if (it == SingletonFunctions.end() || !it->second.first || !it->second.second) return;
     typedef void(gameCall* AutoWalk)(
         uintptr_t ThisPtr,
-        const std::vector<Otc::Direction> *dirs,
-        const Position *startPos
+        std::vector<Otc::Direction> dirs
         );
     auto function = reinterpret_cast<AutoWalk>(it->second.first);
     const auto gamePtr = it->second.second;
     return g_dispatcher->scheduleEventEx([function, gamePtr, dirs, startPos]() {
-        function(gamePtr, &dirs, &startPos);
+        (void)startPos;
+        function(gamePtr, dirs);
     });
 }
 
@@ -583,7 +583,6 @@ std::string Game::getCharacterName() {
         return result;
     });
 }
-
 
 
 

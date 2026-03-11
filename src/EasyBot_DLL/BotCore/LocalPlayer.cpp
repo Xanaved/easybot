@@ -177,13 +177,11 @@ bool LocalPlayer::isAutoWalking(LocalPlayerPtr localPlayer) {
     const auto it = ClassMemberFunctions.find("LocalPlayer.isAutoWalking");
     if (it == ClassMemberFunctions.end() || !it->second) return 0;
     typedef bool(gameCall* IsAutoWalking)(
-        uintptr_t RCX,
-        void *RDX
+        uintptr_t RCX
         );
     auto function = reinterpret_cast<IsAutoWalking>(it->second);
     return g_dispatcher->scheduleEventEx([function, localPlayer]() {
-        void* pMysteryPtr = nullptr;
-        return function(localPlayer, &pMysteryPtr);
+        return function(localPlayer);
     });
 }
 
@@ -206,14 +204,12 @@ bool LocalPlayer::autoWalk(LocalPlayerPtr localPlayer, const Position &destinati
     if (it == ClassMemberFunctions.end() || !it->second) return 0;
     typedef bool(gameCall* AutoWalk)(
         uintptr_t RCX,
-        void *RDX,
-        const Position *R8,
-        bool R9
+        const Position *destination
         );
     auto function = reinterpret_cast<AutoWalk>(it->second);
     return g_dispatcher->scheduleEventEx([function, localPlayer, destination, retry]() {
-        void* pMysteryPtr = nullptr;
-        return function(localPlayer, &pMysteryPtr, &destination, retry);
+        (void)retry;
+        return function(localPlayer, &destination);
     });
 }
 

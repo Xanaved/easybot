@@ -72,6 +72,18 @@ namespace {
             return false;
         }
     }
+
+    bool shouldUseSingletonDescriptor(const std::string& global, const std::string& field) {
+        return
+            (global == "g_map" && field == "findPath") ||
+            (global == "g_game" && field == "getLocalPlayer") ||
+            (global == "g_game" && field == "autoWalk");
+    }
+
+    bool shouldUseClassDescriptor(const std::string& owner, const std::string& field) {
+        return owner == "LocalPlayer" &&
+            (field == "autoWalk" || field == "stopAutoWalk" || field == "isAutoWalking");
+    }
 }
 
 
@@ -84,7 +96,7 @@ void __stdcall hooked_bindSingletonFunction(uintptr_t a1, uintptr_t a2, uintptr_
     auto global = *reinterpret_cast<std::string*>(a1);
     auto field = *reinterpret_cast<std::string*>(a2);
     if (global[1] != '_') {
-        if (!tryReadClassDescriptor(a3, tmp)) {
+        if (!shouldUseClassDescriptor(global, field) || !tryReadClassDescriptor(a3, tmp)) {
             tmp = *reinterpret_cast<uintptr_t*>(ebp + classFunctionOffset);
         }
         ClassMemberFunctions[std::string(global) + "." + std::string(field)]  = tmp;
@@ -94,7 +106,7 @@ void __stdcall hooked_bindSingletonFunction(uintptr_t a1, uintptr_t a2, uintptr_
         */
     } else {
         uintptr_t second_tmp = 0;
-        if (!tryReadSingletonDescriptor(a3, tmp, second_tmp)) {
+        if (!shouldUseSingletonDescriptor(global, field) || !tryReadSingletonDescriptor(a3, tmp, second_tmp)) {
             tmp = *reinterpret_cast<uintptr_t*>(ebp + singletonFunctionOffset);
             second_tmp = *reinterpret_cast<uintptr_t*>(ebp + singletonFunctionOffset + 0x04);
         }
