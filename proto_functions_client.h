@@ -139,7 +139,6 @@ public:
     std::vector<uintptr_t> getSpectators(const Position &centerPos, bool multiFloor = false);
     std::vector<Otc::Direction> findPath(const Position& startPos, const Position& goalPos, int maxComplexity, int flags);
     bool isSightClear(const Position& fromPos, const Position& toPos);
-    bool openCorpseNear(const Position& pos);
 
     // Thing
     uint32_t getId(uintptr_t thing);

@@ -26,20 +26,6 @@ void fromPos(const Position& pos, bot::bot_Position* proto) {
     proto->set_z(pos.z);
 }
 
-bool tryOpenCorpseOnTile(const Position& pos) {
-    auto tile = g_map->getTile(pos);
-    if (!tile) return false;
-
-    auto thing = g_tile->getTopUseThing(tile);
-    if (!thing) return false;
-
-    if (!g_thing->isLyingCorpse(thing)) return false;
-    if (!g_thing->isContainer(thing)) return false;
-
-    g_game->open(toPtr<Item>(thing), toPtr<Container>(0));
-    return true;
-}
-
 // Functions:
 // ================= Container.h =================
 Status BotServiceImpl::GetItem(ServerContext* context, const bot::bot_GetItemRequest* request, google::protobuf::UInt64Value* response) {
@@ -541,26 +527,6 @@ Status BotServiceImpl::IsSightClear(ServerContext* context, const bot::bot_IsSig
     return Status::OK;
 }
 
-Status BotServiceImpl::OpenCorpseNear(ServerContext* context, const bot::bot_Position* request, google::protobuf::BoolValue* response) {
-    const Position center = toPos(*request);
-    static const int offsets[][2] = {
-        {0, 0},
-        {1, 0}, {-1, 0}, {0, 1}, {0, -1},
-        {1, 1}, {1, -1}, {-1, 1}, {-1, -1},
-    };
-
-    for (const auto& offset : offsets) {
-        Position probe{center.x + offset[0], center.y + offset[1], center.z};
-        if (tryOpenCorpseOnTile(probe)) {
-            response->set_value(true);
-            return Status::OK;
-        }
-    }
-
-    response->set_value(false);
-    return Status::OK;
-}
-
 // ================= Thing.h =================
 Status BotServiceImpl::GetId(ServerContext* context, const google::protobuf::UInt64Value* request, google::protobuf::UInt32Value* response) {
     response->set_value(g_thing->getId(toPtr<Thing>(request->value())));
@@ -698,5 +664,6 @@ void RunServer() {
     }
     server->Wait();
 }
+
 
 
