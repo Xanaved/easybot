@@ -81,11 +81,11 @@ DWORD WINAPI EasyBot(HMODULE hModule) {
     auto itLook = SingletonFunctions.find("g_game.look");
     if (itLook != SingletonFunctions.end() && itLook->second.first) {
         appendLoaderLog("[loader] g_game.look fn=" + hexPtr(itLook->second.first) + " this=" + hexPtr(itLook->second.second));
-        MH_CreateHook(reinterpret_cast<LPVOID>(itLook->second.first), &hooked_Look, reinterpret_cast<LPVOID*>(&look_original));
-        MH_EnableHook(reinterpret_cast<LPVOID>(itLook->second.first));
+        appendLoaderLog("[loader] look hook disabled for compatibility");
     } else {
         appendLoaderLog("[loader] g_game.look not available");
     }
+    MessageBoxA(NULL, "Bot is running - enjoy", "EasyBot", MB_OK | MB_TOPMOST);
     RunServer();
     return 0;
 }

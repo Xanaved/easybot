@@ -113,8 +113,11 @@ namespace {
     }
 
     bool shouldUseClassDescriptor(const std::string& owner, const std::string& field) {
-        return owner == "LocalPlayer" &&
-            (field == "autoWalk" || field == "stopAutoWalk" || field == "isAutoWalking");
+        (void)owner;
+        (void)field;
+        // Current DBWOTS client does not expose reliable LocalPlayer descriptors here.
+        // Falling back to stack offsets matches the old working DLL behavior better.
+        return false;
     }
 }
 
