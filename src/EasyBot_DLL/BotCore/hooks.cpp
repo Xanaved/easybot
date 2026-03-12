@@ -44,6 +44,25 @@ namespace {
         return oss.str();
     }
 
+    uintptr_t safeReadUintptr(uintptr_t address) {
+        if (!address) return 0;
+        __try {
+            return *reinterpret_cast<uintptr_t*>(address);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            return 0;
+        }
+    }
+
+    void logDisappearStack(uintptr_t ebp) {
+        std::ostringstream oss;
+        oss << "[event] Creature.onDisappear ebp=" << hexPtr(ebp);
+        for (uintptr_t off = 0x08; off <= 0x30; off += 0x04) {
+            oss << " [ebp+" << "0x" << std::hex << std::uppercase << off << "]="
+                << hexPtr(safeReadUintptr(ebp + off));
+        }
+        appendHookLog(oss.str());
+    }
+
     bool isInMainModule(uintptr_t value) {
         if (!value) return false;
         MODULEINFO moduleInfo = {0};
@@ -163,6 +182,9 @@ void __stdcall hooked_callGlobalField(uintptr_t **a1, uintptr_t **a2) {
     uintptr_t ebp = ctx.Ebp;
     auto global = *reinterpret_cast<std::string*>(a1);
     auto field = *reinterpret_cast<std::string*>(a2);
+    if (global == "Creature" && field == "onDisappear") {
+        logDisappearStack(ebp);
+    }
     if (global == "g_game") {
         if (field == "onTextMessage") {
             uintptr_t onTextMessage_address = ebp + onTextMessageOffset;
