@@ -112,6 +112,7 @@ service BotService {
   rpc GetSpectators(bot_GetSpectatorsRequest) returns (bot_Uint64List);
   rpc FindPath(bot_FindPathRequest) returns (bot_DirectionList);
   rpc IsSightClear(bot_IsSightClearRequest) returns (google.protobuf.BoolValue);
+  rpc OpenCorpseNear(bot_Position) returns (google.protobuf.BoolValue);
 
   // --- Thing.h ---
   rpc GetId(google.protobuf.UInt64Value) returns (google.protobuf.UInt32Value);

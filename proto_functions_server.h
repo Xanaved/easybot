@@ -114,6 +114,7 @@ public:
     Status GetSpectators(ServerContext* context, const bot::bot_GetSpectatorsRequest* request, bot::bot_Uint64List* response) override;
     Status FindPath(ServerContext* context, const bot::bot_FindPathRequest* request, bot::bot_DirectionList* response) override;
     Status IsSightClear(ServerContext* context, const bot::bot_IsSightClearRequest* request, google::protobuf::BoolValue* response) override;
+    Status OpenCorpseNear(ServerContext* context, const bot::bot_Position* request, google::protobuf::BoolValue* response) override;
 
     // --- Thing.h ---
     Status GetId(ServerContext* context, const google::protobuf::UInt64Value* request, google::protobuf::UInt32Value* response) override;
@@ -147,4 +148,3 @@ public:
 void RunServer();
 
 #endif // PROTO_FUNCTIONS_H
-

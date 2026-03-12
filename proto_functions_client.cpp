@@ -1031,6 +1031,18 @@ bool BotClient::isSightClear(const Position& fromPos, const Position& toPos)
     return response.value();
 }
 
+bool BotClient::openCorpseNear(const Position& pos)
+{
+    bot_Position request;
+    request.set_x(pos.x);
+    request.set_y(pos.y);
+    request.set_z(pos.z);
+    google::protobuf::BoolValue response;
+    ClientContext context;
+    Status status = stub->OpenCorpseNear(&context, request, &response);
+    return status.ok() && response.value();
+}
+
 //Thing
 uint32_t BotClient::getId(uintptr_t value)
 {
@@ -1221,4 +1233,3 @@ void BotClient::dropMessages(int messageNumber) {
     ClientContext context;
     Status status = stub->DropMessages(&context, request, &response);
 }
-
