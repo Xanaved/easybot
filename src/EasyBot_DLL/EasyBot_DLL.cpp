@@ -129,7 +129,26 @@ DWORD WINAPI EasyBot(HMODULE hModule) {
     auto itLook = SingletonFunctions.find("g_game.look");
     if (itLook != SingletonFunctions.end() && itLook->second.first) {
         appendLoaderLog("[loader] g_game.look fn=" + hexPtr(itLook->second.first) + " this=" + hexPtr(itLook->second.second));
-        appendLoaderLog("[loader] look hook disabled for compatibility");
+        const auto itItemGetId = ClassMemberFunctions.find("Item.getId");
+        if (itItemGetId != ClassMemberFunctions.end() && itItemGetId->second) {
+            const auto hookStatus = MH_CreateHook(
+                reinterpret_cast<LPVOID>(itLook->second.first),
+                &hooked_Look,
+                reinterpret_cast<LPVOID*>(&look_original)
+            );
+            if (hookStatus == MH_OK || hookStatus == MH_ERROR_ALREADY_CREATED) {
+                const auto enableStatus = MH_EnableHook(reinterpret_cast<LPVOID>(itLook->second.first));
+                if (enableStatus == MH_OK || enableStatus == MH_ERROR_ENABLED) {
+                    appendLoaderLog("[loader] look hook enabled");
+                } else {
+                    appendLoaderLog("[loader] look hook enable failed: " + std::to_string(static_cast<int>(enableStatus)));
+                }
+            } else {
+                appendLoaderLog("[loader] look hook create failed: " + std::to_string(static_cast<int>(hookStatus)));
+            }
+        } else {
+            appendLoaderLog("[loader] look hook skipped: Item.getId not bound");
+        }
     } else {
         appendLoaderLog("[loader] g_game.look not available");
     }
