@@ -99,6 +99,42 @@ namespace {
         }
     }
 
+    bool callBoolMemberWithMystery(uintptr_t functionAddress, uintptr_t thisPtr) {
+        if (!functionAddress || !thisPtr) return false;
+        typedef bool(gameCall* BoolFn)(uintptr_t RCX, void* RDX);
+        auto function = reinterpret_cast<BoolFn>(functionAddress);
+        void* mystery = nullptr;
+        __try {
+            return function(thisPtr, &mystery);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            return false;
+        }
+    }
+
+    bool callPositionMember(uintptr_t functionAddress, uintptr_t thisPtr, Position* outPos) {
+        if (!functionAddress || !thisPtr || !outPos) return false;
+        typedef void(gameCall* GetPositionFn)(uintptr_t RCX, Position* RDX);
+        auto function = reinterpret_cast<GetPositionFn>(functionAddress);
+        __try {
+            function(thisPtr, outPos);
+            return true;
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            return false;
+        }
+    }
+
+    bool callNameMember(uintptr_t functionAddress, uintptr_t thisPtr, std::string* outName) {
+        if (!functionAddress || !thisPtr || !outName) return false;
+        typedef void(gameCall* GetNameFn)(uintptr_t RCX, std::string* RDX);
+        auto function = reinterpret_cast<GetNameFn>(functionAddress);
+        __try {
+            function(thisPtr, outName);
+            return true;
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            return false;
+        }
+    }
+
     void logDisappearStack(uintptr_t ebp) {
         std::ostringstream oss;
         oss << "[event] Creature.onDisappear ebp=" << hexPtr(ebp);
@@ -113,71 +149,37 @@ namespace {
         if (!thing) return false;
         auto it = ClassMemberFunctions.find("Thing.isMonster");
         if (it == ClassMemberFunctions.end() || !it->second) return false;
-        typedef bool(gameCall* IsMonsterFn)(uintptr_t RCX, void* RDX);
-        auto function = reinterpret_cast<IsMonsterFn>(it->second);
-        void* mystery = nullptr;
-        __try {
-            return function(thing, &mystery);
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            return false;
-        }
+        return callBoolMemberWithMystery(it->second, thing);
     }
 
     bool directCreatureIsDead(uintptr_t creature) {
         if (!creature) return false;
         auto it = ClassMemberFunctions.find("Creature.isDead");
         if (it == ClassMemberFunctions.end() || !it->second) return false;
-        typedef bool(gameCall* IsDeadFn)(uintptr_t RCX, void* RDX);
-        auto function = reinterpret_cast<IsDeadFn>(it->second);
-        void* mystery = nullptr;
-        __try {
-            return function(creature, &mystery);
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            return false;
-        }
+        return callBoolMemberWithMystery(it->second, creature);
     }
 
     bool directCreatureCanBeSeen(uintptr_t creature) {
         if (!creature) return false;
         auto it = ClassMemberFunctions.find("Creature.canBeSeen");
         if (it == ClassMemberFunctions.end() || !it->second) return false;
-        typedef bool(gameCall* CanBeSeenFn)(uintptr_t RCX, void* RDX);
-        auto function = reinterpret_cast<CanBeSeenFn>(it->second);
-        void* mystery = nullptr;
-        __try {
-            return function(creature, &mystery);
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            return false;
-        }
+        return callBoolMemberWithMystery(it->second, creature);
     }
 
     bool directThingGetPosition(uintptr_t thing, Position& outPos) {
         if (!thing) return false;
         auto it = ClassMemberFunctions.find("Thing.getPosition");
         if (it == ClassMemberFunctions.end() || !it->second) return false;
-        typedef void(gameCall* GetPositionFn)(uintptr_t RCX, Position* RDX);
-        auto function = reinterpret_cast<GetPositionFn>(it->second);
-        __try {
-            function(thing, &outPos);
-            return true;
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            return false;
-        }
+        return callPositionMember(it->second, thing, &outPos);
     }
 
     bool directCreatureGetName(uintptr_t creature, std::string& outName) {
         if (!creature) return false;
         auto it = ClassMemberFunctions.find("Creature.getName");
         if (it == ClassMemberFunctions.end() || !it->second) return false;
-        typedef void(gameCall* GetNameFn)(uintptr_t RCX, std::string* RDX);
-        auto function = reinterpret_cast<GetNameFn>(it->second);
-        __try {
-            function(creature, &outName);
-            return true;
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            outName.clear();
-            return false;
-        }
+        const bool ok = callNameMember(it->second, creature, &outName);
+        if (!ok) outName.clear();
+        return ok;
     }
 
     bool isValidCreaturePosition(const Position& pos) {
