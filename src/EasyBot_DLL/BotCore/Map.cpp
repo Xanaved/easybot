@@ -20,6 +20,7 @@ TilePtr Map::getTile(Position tilePos) {
         const Position *a2
         );
     auto function = reinterpret_cast<GetTile>(SingletonFunctions["g_map.getTile"].first);
+    if (!function || !SingletonFunctions["g_map.getTile"].second) return 0;
     return g_dispatcher->scheduleEventEx([function, tilePos]() {
         return *function(SingletonFunctions["g_map.getTile"].second, &tilePos);
     });
@@ -33,6 +34,7 @@ std::vector<CreaturePtr> Map::getSpectators(const Position centerPos, bool multi
         bool R9
         );
     auto function = reinterpret_cast<GetSpectators>(SingletonFunctions["g_map.getSpectators"].first);
+    if (!function || !SingletonFunctions["g_map.getSpectators"].second) return {};
     return g_dispatcher->scheduleEventEx([function, centerPos, multiFloor]() {
         std::vector<CreaturePtr> result;
         function(SingletonFunctions["g_map.getSpectators"].second, &result, &centerPos, multiFloor);
@@ -50,6 +52,7 @@ std::vector<Otc::Direction> Map::findPath(const Position startPos, const Positio
         int flags
         );
     auto function = reinterpret_cast<FindPath>(SingletonFunctions["g_map.findPath"].first);
+    if (!function || !SingletonFunctions["g_map.findPath"].second) return {};
     return g_dispatcher->scheduleEventEx([function, startPos, goalPos, maxComplexity, flags]() {
         std::tuple<std::vector<Otc::Direction>, Otc::PathFindResult> pMysteryPtr;
         auto ret = function(SingletonFunctions["g_map.findPath"].second, &pMysteryPtr, &startPos,  &goalPos, maxComplexity, flags);
@@ -67,12 +70,12 @@ bool Map::isSightClear(const Position& fromPos, const Position& toPos) {
         const Position *toPos
         );
     auto function = reinterpret_cast<IsSightClear>(SingletonFunctions["g_map.isSightClear"].first);
+    if (!function || !SingletonFunctions["g_map.isSightClear"].second) return true;
     return g_dispatcher->scheduleEventEx([function, fromPos, toPos]() {
         void* pMysteryPtr = nullptr;
         return function(SingletonFunctions["g_map.isSightClear"].second, &pMysteryPtr, &fromPos, &toPos);
     });
 }
-
 
 
 

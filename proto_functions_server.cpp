@@ -641,6 +641,23 @@ Status BotServiceImpl::DropMessages(ServerContext *context, const google::protob
     return grpc::Status::OK;
 }
 
+Status BotServiceImpl::PopCorpseEvent(ServerContext *context, const google::protobuf::Empty *request,
+    bot::bot_CorpseEvent *response) {
+    CorpseEventStruct corpseEvent{};
+    if (!g_custom->popCorpseEvent(&corpseEvent)) {
+        response->set_creature(0);
+        fromPos(Position{}, response->mutable_pos());
+        response->set_timestamp(0);
+        return grpc::Status::OK;
+    }
+
+    response->set_creature(corpseEvent.creature);
+    response->set_name(corpseEvent.name);
+    fromPos(corpseEvent.pos, response->mutable_pos());
+    response->set_timestamp(corpseEvent.timestamp);
+    return grpc::Status::OK;
+}
+
 
 // End of Functions
 

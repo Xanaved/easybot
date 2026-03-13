@@ -163,6 +163,7 @@ public:
     // Custom Functions
     void clearMessages();
     void dropMessages(int messageNumber);
+    bot_CorpseEvent popCorpseEvent();
 
 
 private:

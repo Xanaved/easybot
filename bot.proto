@@ -137,6 +137,7 @@ service BotService {
   rpc GetMessages(google.protobuf.UInt32Value) returns (bot_GetMessages);
   rpc ClearMessages(google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc DropMessages(google.protobuf.UInt32Value) returns (google.protobuf.Empty);
+  rpc PopCorpseEvent(google.protobuf.Empty) returns (bot_CorpseEvent);
 
 }
 
@@ -153,6 +154,13 @@ message bot_Message {
 
 message bot_GetMessages {
   repeated bot_Message messages = 1;
+}
+
+message bot_CorpseEvent {
+  uint64 creature = 1;
+  string name = 2;
+  bot_Position pos = 3;
+  uint64 timestamp = 4;
 }
 
 message bot_GetItemRequest {

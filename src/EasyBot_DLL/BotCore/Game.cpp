@@ -437,6 +437,14 @@ void Game::equipItemId(uint16_t itemId, uint8_t tier) {
         uint8_t tier
         );
     auto function = reinterpret_cast<EquipItemId>(SingletonFunctions["g_game.equipItemId"].first);
+    const auto gamePtr = SingletonFunctions["g_game.equipItemId"].second;
+    if (!function || !gamePtr) {
+        const auto item = findItemInContainers(itemId, -1, tier);
+        if (item) {
+            equipItem(item);
+        }
+        return;
+    }
     return g_dispatcher->scheduleEventEx([function, itemId, tier]() {
         function(SingletonFunctions["g_game.equipItemId"].second, itemId, tier);
     });
@@ -484,9 +492,10 @@ bool Game::isOnline() {
        void *RDX
        );
     auto function = reinterpret_cast<IsOnline>(SingletonFunctions["g_game.isOnline"].first);
+    if (!function || !SingletonFunctions["g_game.isOnline"].second) return false;
     return g_dispatcher->scheduleEventEx([function]() {
             void* pMysteryPtr = nullptr;
-            auto ret = function(SingletonFunctions["isOnline.isOnline"].second, &pMysteryPtr);
+            auto ret = function(SingletonFunctions["g_game.isOnline"].second, &pMysteryPtr);
             return ret;
     });
 }
@@ -497,6 +506,7 @@ bool Game::isAttacking() {
        void *RDX
        );
     auto function = reinterpret_cast<IsAttacking>(SingletonFunctions["g_game.isAttacking"].first);
+    if (!function || !SingletonFunctions["g_game.isAttacking"].second) return false;
     return g_dispatcher->scheduleEventEx([function]() {
             void* pMysteryPtr = nullptr;
             auto ret = function(SingletonFunctions["g_game.isAttacking"].second, &pMysteryPtr);
@@ -510,6 +520,7 @@ bool Game::isFollowing() {
        void *RDX
        );
     auto function = reinterpret_cast<IsFollowing>(SingletonFunctions["g_game.isFollowing"].first);
+    if (!function || !SingletonFunctions["g_game.isFollowing"].second) return false;
     return g_dispatcher->scheduleEventEx([function]() {
             void* pMysteryPtr = nullptr;
             auto ret = function(SingletonFunctions["g_game.isFollowing"].second, &pMysteryPtr);
@@ -614,8 +625,6 @@ std::string Game::getCharacterName() {
         return result;
     });
 }
-
-
 
 
 

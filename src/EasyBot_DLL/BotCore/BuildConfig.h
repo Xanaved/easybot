@@ -65,6 +65,17 @@ enum {
     #define onTextMessageOffset 0x14
     #define onTalkOffset 0x10
     #define lightHackOffset 0xAC
+    // DBW client RVAs confirmed from live client binding scan.
+    #define dbw_g_game_singleton_rva 0x47CF60
+    #define dbw_g_map_singleton_rva 0x47D080
+    #define dbw_g_game_getLocalPlayer_rva 0x029530
+    #define dbw_g_game_autoWalk_rva 0x22C990
+    #define dbw_g_game_walk_rva 0x22D1A0
+    #define dbw_g_game_look_rva 0x22BE00
+    #define dbw_g_map_findPath_rva 0x256950
+    #define dbw_localPlayer_isAutoWalking_rva 0x0343D0
+    #define dbw_localPlayer_autoWalk_rva 0x23D070
+    #define dbw_localPlayer_stopAutoWalk_rva 0x23E230
 #elif BuildOption == BUILD_EXORDION
     static const BYTE* callGlobalField_PATTERN = reinterpret_cast<const BYTE*>("\x55\x8b\xec\x8b\x45\x00\x83\x78\x00\x00\x00\x00\x8b\x00\x50\x68\x00\x00\x00\x00\xff\x35\x00\x00\x00\x00\xe8\x00\x00\x00\x00\x6a");
     static LPCSTR callGlobalField_MASK = "xxxxx?xx????xxxx????xx????x?????";

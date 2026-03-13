@@ -2,6 +2,7 @@
 #include "pattern_scan.h"
 #include "MinHook.h"
 #include "hooks.h"
+#include "BotCore/DbwBindingOverrides.h"
 #include "Game.h"
 #include "LocalPlayer.h"
 #include "Thing.h"
@@ -12,9 +13,19 @@
 #include <sstream>
 
 namespace {
+    std::string getLoaderLogPath() {
+        char tempPath[MAX_PATH] = {0};
+        DWORD len = GetTempPathA(MAX_PATH, tempPath);
+        std::string path = (len > 0 && len < MAX_PATH) ? std::string(tempPath) : std::string();
+        if (!path.empty() && path.back() != '\\' && path.back() != '/') {
+            path.push_back('\\');
+        }
+        path += "easybot_runtime.log";
+        return path;
+    }
+
     void appendLoaderLog(const std::string& line) {
-        CreateDirectoryA("C:\\temp", nullptr);
-        std::ofstream out("C:\\temp\\easybot_runtime.log", std::ios::app);
+        std::ofstream out(getLoaderLogPath(), std::ios::app);
         if (!out.is_open()) return;
         out << line << std::endl;
     }
@@ -24,6 +35,42 @@ namespace {
         oss << "0x" << std::hex << std::uppercase << value;
         return oss.str();
     }
+
+#if BuildOption == BUILD_DBWOTS
+    uintptr_t dbwClientBase() {
+        return reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
+    }
+
+    uintptr_t dbwClientAddress(uintptr_t rva) {
+        const auto base = dbwClientBase();
+        return base ? base + rva : 0;
+    }
+
+    void seedDbwStaticBindings() {
+        const auto base = dbwClientBase();
+        if (!base) {
+            appendLoaderLog("[loader] DBW static binding seed skipped: missing client base");
+            return;
+        }
+
+        for (const auto& entry : kDbwSingletonBindingOverrides) {
+            SingletonFunctions[entry.name] = {dbwClientAddress(entry.functionRva), dbwClientAddress(entry.singletonRva)};
+        }
+        for (const auto& entry : kDbwClassBindingOverrides) {
+            ClassMemberFunctions[entry.name] = dbwClientAddress(entry.functionRva);
+        }
+
+        appendLoaderLog("[loader] seeded DBW static bindings"
+                        " singletons=" + std::to_string(sizeof(kDbwSingletonBindingOverrides) / sizeof(kDbwSingletonBindingOverrides[0])) +
+                        " classes=" + std::to_string(sizeof(kDbwClassBindingOverrides) / sizeof(kDbwClassBindingOverrides[0])) +
+                        " look=" + hexPtr(SingletonFunctions["g_game.look"].first) +
+                        " getLocalPlayer=" + hexPtr(SingletonFunctions["g_game.getLocalPlayer"].first) +
+                        " findPath=" + hexPtr(SingletonFunctions["g_map.findPath"].first) +
+                        " lp.autoWalk=" + hexPtr(ClassMemberFunctions["LocalPlayer.autoWalk"]));
+    }
+#else
+    void seedDbwStaticBindings() {}
+#endif
 }
 
 
@@ -68,6 +115,7 @@ DWORD WINAPI EasyBot(HMODULE hModule) {
     std::cout << "Main Loop " << std::hex << mainLoop_func << std::endl;
     */
     MH_EnableHook(MH_ALL_HOOKS);
+    seedDbwStaticBindings();
     const auto startTick = GetTickCount();
     while (true) {
         auto it = SingletonFunctions.find("g_game.look");

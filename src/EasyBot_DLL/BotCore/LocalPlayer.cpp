@@ -1,4 +1,5 @@
 #include "LocalPlayer.h"
+#include "Item.h"
 #include <fstream>
 #include <mutex>
 #include <sstream>
@@ -186,6 +187,18 @@ int LocalPlayer::getInventoryCount(LocalPlayerPtr localPlayer, uint16_t itemId, 
         int tier
         );
     auto function = reinterpret_cast<GetInventoryCount>(ClassMemberFunctions["LocalPlayer.getInventoryCount"]);
+    if (!function) {
+        int totalCount = 0;
+        for (uint8_t slot = Otc::InventorySlotHead; slot < Otc::LastInventorySlot; ++slot) {
+            const auto item = getInventoryItem(localPlayer, static_cast<Otc::InventorySlot>(slot));
+            if (!item) continue;
+            if (g_item->getId(item) != itemId) continue;
+            if (tier >= 0 && g_item->getTier(item) != static_cast<uint8_t>(tier)) continue;
+            const int itemCount = g_item->getCount(item);
+            totalCount += itemCount > 0 ? itemCount : 1;
+        }
+        return totalCount;
+    }
     return g_dispatcher->scheduleEventEx([function, localPlayer, itemId, tier]() {
         void* pMysteryPtr = nullptr;
         return function(localPlayer, &pMysteryPtr, itemId, tier);

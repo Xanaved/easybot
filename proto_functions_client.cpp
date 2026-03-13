@@ -1222,3 +1222,11 @@ void BotClient::dropMessages(int messageNumber) {
     Status status = stub->DropMessages(&context, request, &response);
 }
 
+bot_CorpseEvent BotClient::popCorpseEvent() {
+    Empty request;
+    bot_CorpseEvent response;
+    ClientContext context;
+    Status status = stub->PopCorpseEvent(&context, request, &response);
+    return response;
+}
+
