@@ -364,9 +364,15 @@ void __stdcall hooked_callGlobalField(uintptr_t **a1, uintptr_t **a2) {
             uintptr_t onTextMessage_address = ebp + onTextMessageOffset;
             auto ptr_messageText = g_custom->getMessagePtr(onTextMessage_address);
             auto message_address = reinterpret_cast<std::string*>(ptr_messageText);
-            if (message_address->find("You see") != std::string::npos)
+            if (!message_address) {
+                appendHookLog("[look] onTextMessage null message ptr ebp=" + hexPtr(ebp));
+            } else {
+                appendHookLog("[look] onTextMessage text=\"" + *message_address + "\" itemId=" + std::to_string(itemId));
+            }
+            if (message_address && message_address->find("You see") != std::string::npos)
             {
-                *message_address = "ID: " + std::to_string(itemId) + "\n" + *reinterpret_cast<std::string*>(ptr_messageText);
+                *message_address = "ID: " + std::to_string(itemId) + "\n" + *message_address;
+                appendHookLog("[look] onTextMessage patched with itemId=" + std::to_string(itemId));
             }
         } else if (field == "onTalk") {
             auto args = reinterpret_cast<StackArgs*>(ebp + onTalkOffset);
@@ -400,7 +406,13 @@ typedef uint32_t(gameCall* GetId)(
 void __stdcall hooked_Look(const uintptr_t& thing, const bool isBattleList) {
     look_original(&thing, isBattleList);
     auto function = reinterpret_cast<GetId>(ClassMemberFunctions["Item.getId"]);
+    if (!function) {
+        appendHookLog("[look] Item.getId not bound inside hooked_Look");
+        return;
+    }
     void* pMysteryPtr = nullptr;
     itemId = function(thing, &pMysteryPtr);
-
+    appendHookLog("[look] hooked_Look thing=" + hexPtr(thing) +
+                  " battleList=" + std::to_string(static_cast<int>(isBattleList)) +
+                  " itemId=" + std::to_string(itemId));
 }

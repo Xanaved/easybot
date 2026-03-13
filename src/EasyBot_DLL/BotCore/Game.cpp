@@ -250,14 +250,27 @@ void Game::refreshContainer(const ContainerPtr &container) {
 
 void Game::attack(const CreaturePtr &creature, bool cancel = false) {
     if (!creature) return;
+#if BuildOption == BUILD_DBWOTS
+    typedef void(gameCall* Attack)(
+        uintptr_t RCX,
+        const CreaturePtr* RDX,
+        bool R8
+        );
+#else
     typedef void(gameCall* Attack)(
         uintptr_t RCX,
         CreaturePtr RDX,
         bool R8
         );
+#endif
     auto function = reinterpret_cast<Attack>(SingletonFunctions["g_game.attack"].first);
-    return g_dispatcher->scheduleEventEx([function, creature, cancel]() {
-        function(SingletonFunctions["g_game.attack"].second, creature, cancel);
+    const auto gamePtr = SingletonFunctions["g_game.attack"].second;
+    return g_dispatcher->scheduleEventEx([function, gamePtr, creature, cancel]() {
+#if BuildOption == BUILD_DBWOTS
+        function(gamePtr, &creature, cancel);
+#else
+        function(gamePtr, creature, cancel);
+#endif
     });
 }
 
@@ -625,7 +638,6 @@ std::string Game::getCharacterName() {
         return result;
     });
 }
-
 
 
 
