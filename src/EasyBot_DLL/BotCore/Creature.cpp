@@ -169,7 +169,7 @@ bool Creature::canShoot(CreaturePtr creature, int distance) {
         if (fromPos.z != toPos.z) return false;
         const auto deltaX = std::abs(fromPos.x - toPos.x);
         const auto deltaY = std::abs(fromPos.y - toPos.y);
-        if (std::max(deltaX, deltaY) > distance) return false;
+        if ((std::max)(deltaX, deltaY) > distance) return false;
         if (ClassMemberFunctions["LocalPlayer.hasSight"]) {
             return g_localPlayer->hasSight(localPlayer, toPos);
         }
